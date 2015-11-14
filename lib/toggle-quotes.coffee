@@ -7,7 +7,8 @@ toggleQuotes = (editor) ->
 
 toggleQuoteAtPosition = (editor, position) ->
   quoteChars = atom.config.get('toggle-quotes.quoteCharacters')
-  range = editor.displayBuffer.bufferRangeForScopeAtPosition('.string.quoted', position)
+  screenPosition = editor.screenPositionForBufferPosition(position)
+  range = editor.displayBuffer.bufferRangeForScopeAtPosition('.string.quoted', screenPosition)
 
   unless range?
     # Attempt to match the current invalid region if it is wrapped in quotes
@@ -19,7 +20,11 @@ toggleQuoteAtPosition = (editor, position) ->
 
   return unless range?
 
-  text = editor.getTextInBufferRange(range)
+  bufferRange =
+    start: editor.bufferPositionForScreenPosition(range.start)
+    end: editor.bufferPositionForScreenPosition(range.end)
+
+  text = editor.getTextInBufferRange(bufferRange)
   [quoteCharacter] = text
 
   # In Python a string can have a prefix specifying its format. The Python
@@ -39,7 +44,7 @@ toggleQuoteAtPosition = (editor, position) ->
     .replace(escapedQuoteRegex, quoteCharacter)
   newText = prefix + nextQuoteCharacter + newText[(1+prefix.length)...-1] + nextQuoteCharacter
 
-  editor.setTextInBufferRange(range, newText)
+  editor.setTextInBufferRange(bufferRange, newText)
 
 getNextQuoteCharacter = (quoteCharacter, allQuoteCharacters) ->
   index = allQuoteCharacters.indexOf(quoteCharacter)
